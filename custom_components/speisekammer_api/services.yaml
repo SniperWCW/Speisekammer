@@ -11,7 +11,6 @@ scan_item:
         text:
     action:
       name: Aktion
-      description: 'add' zur Erfassung oder 'remove' zur Ausgabe.
       required: true
       example: 'add'
       selector:
