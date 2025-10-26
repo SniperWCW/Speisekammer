@@ -1,0 +1,51 @@
+scan_item:
+  name: Artikel scannen
+  description: Erfasst oder entnimmt einen Artikel basierend auf dem Barcode.
+  fields:
+    barcode:
+      name: Barcode
+      description: Der gescannte EAN- oder Produkt-Barcode.
+      required: true
+      example: '4008400400100'
+      selector:
+        text:
+    action:
+      name: Aktion
+      description: 'add' zur Erfassung oder 'remove' zur Ausgabe.
+      required: true
+      example: 'add'
+      selector:
+        select:
+          options:
+            - 'add'
+            - 'remove'
+    storage_id:
+      name: Lagerort ID
+      description: Die ID des Lagerortes (z.B. 1 für Kühlschrank, 2 für Pantry).
+      required: true
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
+    quantity:
+      name: Menge
+      description: Die Anzahl der zu erfassenden/entnehmenden Einheiten.
+      required: false
+      default: 1
+      example: 2
+      selector:
+        number:
+          min: 1
+          mode: box
+    mhd_date:
+      name: MHD Datum
+      description: Das Mindesthaltbarkeitsdatum im Format YYYY-MM-DD. Nur für 'add' relevant.
+      required: false
+      example: '2025-12-31'
+      selector:
+        date:
+
+refresh_data:
+  name: Daten aktualisieren
+  description: Lädt Communities und Lagerorte neu. Nützlich nach API-Änderungen.
