@@ -3,10 +3,9 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
-from homeassistant.const import CONF_URL, CONF_TOKEN
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import AbortFlow
 
-# Wichtiger Import für die Standard-URL
 from .const import DOMAIN, CONF_API_URL, CONF_API_TOKEN, DEFAULT_API_URL
 from .api import SpeisekammerAPI, SpeisekammerAPIError
 
@@ -14,19 +13,19 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # Schema für die Eingabemaske
-# 1. CONF_API_URL ist jetzt optional mit dem vordefinierten Standardwert.
-# 2. CONF_API_TOKEN ist weiterhin zwingend erforderlich.
 DATA_SCHEMA = vol.Schema({
+    # Die URL ist optional und hat einen Standardwert
     vol.Optional(CONF_API_URL, default=DEFAULT_API_URL): str,
+    # Der Token ist weiterhin erforderlich
     vol.Required(CONF_API_TOKEN): str,
 })
 
 async def validate_input(hass: HomeAssistant, data: dict) -> dict:
     """Validiert die Benutzer-Eingabe und testet die Verbindung zur API."""
     
-    # Stellen Sie sicher, dass die URL mit https:// beginnt, da sie nur den Hostnamen liefern kann
+    # URL-Verarbeitung: Stellt sicher, dass das Protokoll (https://) verwendet wird
     api_url = data[CONF_API_URL]
-    if not api_url.startswith("http"):
+    if not api_url.startswith(("http://", "https://")):
          api_url = f"https://{api_url}"
     
     api = SpeisekammerAPI(hass, api_url, data[CONF_API_TOKEN])
@@ -35,8 +34,8 @@ async def validate_input(hass: HomeAssistant, data: dict) -> dict:
         # Versucht, Community ID und Lagerorte abzurufen (Test der Verbindung)
         await api.async_fetch_initial_data()
     except SpeisekammerAPIError as err:
-        # Fängt spezifische API-Fehler (DNS, Auth etc.) ab
         _LOGGER.error("Validierung fehlgeschlagen: %s", err)
+        # Die Fehlermeldung der API wird direkt an den Benutzer zurückgegeben
         raise SpeisekammerConnectionError(f"Verbindungsfehler: {err}") from err
 
     # Rückgabe, wenn die Validierung erfolgreich war
@@ -47,7 +46,6 @@ class SpeisekammerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Konfigurationsfluss für die Speisekammer API."""
 
     VERSION = 1
-    # Erlaubt nur eine Instanz der Integration
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL 
 
     async def async_step_user(self, user_input=None) -> FlowResult:
@@ -55,27 +53,28 @@ class SpeisekammerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # Überprüfen, ob diese Konfiguration bereits existiert
+            # Stellt sicher, dass nur eine Instanz konfiguriert werden kann
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
 
             try:
                 info = await validate_input(self.hass, user_input)
             except SpeisekammerConnectionError as err:
-                # Zeigt spezifischen Fehler aus der Validierungsfunktion an
+                # Setzt den Fehler im Formular
                 errors["base"] = str(err)
-                _LOGGER.error("Verbindungsfehler während des Config Flows: %s", err)
-            except Exception: # Alle anderen unvorhergesehenen Fehler
+            except Exception as err: 
+                _LOGGER.exception("Unerwarteter Fehler während der Einrichtung.")
                 errors["base"] = "Unbekannter Fehler während der Einrichtung."
             else:
                 # Erfolgreich: Erzeugt den Konfigurationseintrag
                 return self.async_create_entry(
                     title=info["title"], 
-                    data=user_input,
+                    # Die URL muss im data-Dict mit dem bereinigten Wert gespeichert werden
+                    data=user_input, 
                     options={"community_id": info["community_id"]}
                 )
 
-        # Zeigt das Formular an, falls user_input None ist oder Fehler aufgetreten sind
+        # Zeigt das Formular an
         return self.async_show_form(
             step_id="user", 
             data_schema=DATA_SCHEMA, 
