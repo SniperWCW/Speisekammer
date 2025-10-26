@@ -10,6 +10,8 @@ from .const import (
     API_PATH_STOCK,
     STATUS_ADD,
     STATUS_REMOVE,
+    DOMAIN, 
+    SERVICE_REFRESH_DATA
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +26,6 @@ class SpeisekammerAPI:
     def __init__(self, hass, api_url, api_token):
         """Initialisiert die API-Klasse."""
         self.hass = hass
-        # Entfernt nachgestellten Schrägstrich, um doppelte Slashes bei Pfad-Anhängung zu vermeiden
         self.api_url = api_url.rstrip('/') 
         self.api_token = api_token
         self.community_id = None
@@ -97,12 +98,14 @@ class SpeisekammerAPI:
         # Lagerorte im Format {id: name} speichern
         self.storage_locations = {item['id']: item['name'] for item in data}
         _LOGGER.debug("Lagerorte geladen: %s", self.storage_locations)
+        
+        # Benachrichtigt alle Listener (z.B. den Sensor) über die erfolgreiche Aktualisierung
+        self.hass.bus.async_fire(f"call_service/{DOMAIN}/{SERVICE_REFRESH_DATA}")
 
 
     async def async_update_stock(self, storage_id, barcode, action, quantity, mhd_date=None):
         """Führt PUT /stock aus (Erfassung (1) oder Ausgabe (2))."""
         
-        # Mapping der Action auf den API-Status-Code
         status = STATUS_ADD if action == "add" else STATUS_REMOVE
         
         if storage_id not in self.storage_locations:
@@ -120,17 +123,11 @@ class SpeisekammerAPI:
         _LOGGER.debug("Sende Bestand-Update Payload: %s", payload)
 
         path = API_PATH_STOCK
-        # PUT Request ausführen (erzeugt den Eintrag oder aktualisiert ihn)
         result = await self.async_request("PUT", path, data=payload)
         
         _LOGGER.info("Bestand-Update erfolgreich: %s", result)
         return result
 
-    async def async_get_inventory(self, storage_id):
-    """Ruft den aktuellen Bestand für einen Lagerort ab (GET /stock)."""
-    # Annahme: API erlaubt GET /stock?community=X&storage=Y
-    path = f"{API_PATH_STOCK}?community={self.community_id}&storage={storage_id}"
-    return await self.async_request("GET", path)
 
 # ==================================================================================
 # FEHLERKLASSEN
