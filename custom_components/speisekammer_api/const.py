@@ -7,7 +7,7 @@ DOMAIN = "speisekammer_api"
 # =====================================================================
 
 # Standard-API-URL der Speisekammer-App.
-# WICHTIG: Verwenden Sie die URL, mit der die Einrichtung erfolgreich war.
+# WICHTIG: Verwenden Sie die funktionierende Basis-URL (inkl. Protokoll).
 DEFAULT_API_URL = "https://app.speisekammer.app" 
 
 # Konfigurationsfluss Schlüssel
@@ -21,7 +21,6 @@ CONF_COMMUNITY_ID = "community_id"
 
 # Services
 SERVICE_SCAN_ITEM = "scan_item"
-SERVICE_UPDATE_STOCK = "update_stock" # Optional, falls implementiert
 SERVICE_REFRESH_DATA = "refresh_data"
 
 # Standard-API-Pfade
@@ -29,7 +28,7 @@ API_PATH_COMMUNITIES = "/communities"
 API_PATH_STORAGE_LOCATIONS = "/communities/{community_id}/storage-locations"
 API_PATH_STOCK = "/stock" 
 
-# Status-Codes für PUT /stock (gemäß Ihrer Node-RED Logik)
+# Status-Codes für PUT /stock
 STATUS_ADD = 1      # Erfassung
 STATUS_REMOVE = 2   # Ausgabe/Verbrauch
 
