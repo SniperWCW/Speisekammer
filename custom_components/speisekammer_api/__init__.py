@@ -43,24 +43,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     api_url = config[CONF_API_URL]
     api_token = config[CONF_API_TOKEN]
-    community_id = options.get("community_id")
+    community_id = options.get("community_id") # Wird hier ignoriert, da es in Schritt 2 aktualisiert wird
 
     # 2. API-Instanz erstellen
     api = SpeisekammerAPI(hass, api_url, api_token)
-    api.community_id = community_id 
+    
+    # WICHTIG: Erster API-Aufruf muss HIER erfolgen und WARTEN (await),
+    # um Community ID und Lagerorte abzurufen, BEVOR Sensoren geladen werden.
+    try:
+        await api.async_fetch_initial_data(is_setup=True) # <-- NEUER PARAMETER HINZUGEFÜGT
+    except SpeisekammerAPIError as err:
+        _LOGGER.error("Fehler beim initialen API-Aufruf: %s", err)
+        return False # Das Setup ist fehlgeschlagen
+
+    # 3. Community ID in der API-Instanz speichern (falls noch nicht geschehen)
+    # Und in den Optionen aktualisieren, falls sie sich geändert hat.
+    entry.options = entry.options | {"community_id": api.community_id}
     
     # Speichern der API-Instanz im Home Assistant Datenobjekt
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = api
 
-    # 3. Dienste registrieren
+    # 4. Dienste registrieren
     _async_register_services(hass, entry)
     
-    # 4. Sensor-Plattformen laden
+    # 5. Sensor-Plattformen laden (jetzt mit garantierten API-Daten)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
-    # Führt den ersten Abruf der Lagerorte aus, um die Datenstruktur zu füllen
-    hass.async_create_task(api.async_fetch_initial_data())
-
     return True
 
 
