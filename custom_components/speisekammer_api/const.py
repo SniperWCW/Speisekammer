@@ -7,6 +7,8 @@ CONF_API_URL = "api_url"
 CONF_API_TOKEN = "api_token"
 CONF_COMMUNITY_ID = "community_id" # Wird automatisch ermittelt, aber hier zur Referenz
 
+DEFAULT_API_URL = "https://app.speisekammer.app"
+
 # Services
 SERVICE_SCAN_ITEM = "scan_item"
 SERVICE_UPDATE_STOCK = "update_stock"
