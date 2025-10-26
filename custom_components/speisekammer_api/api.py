@@ -126,6 +126,11 @@ class SpeisekammerAPI:
         _LOGGER.info("Bestand-Update erfolgreich: %s", result)
         return result
 
+    async def async_get_inventory(self, storage_id):
+    """Ruft den aktuellen Bestand für einen Lagerort ab (GET /stock)."""
+    # Annahme: API erlaubt GET /stock?community=X&storage=Y
+    path = f"{API_PATH_STOCK}?community={self.community_id}&storage={storage_id}"
+    return await self.async_request("GET", path)
 
 # ==================================================================================
 # FEHLERKLASSEN
