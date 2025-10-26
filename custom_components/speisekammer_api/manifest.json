@@ -1,0 +1,11 @@
+{
+  "domain": "speisekammer_api",
+  "name": "Speisekammer API",
+  "version": "0.1.0",
+  "codeowners": ["@SniperWCW"],
+  "config_flow": true,
+  "issue_tracker": "https://github.com/SniperWCW/speisekammer_api/issues",
+  "dependencies": [],
+  "requirements": ["aiohttp"],
+  "integration_type": "hub"
+}
