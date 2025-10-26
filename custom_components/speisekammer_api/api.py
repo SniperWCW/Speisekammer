@@ -73,7 +73,7 @@ class SpeisekammerAPI:
                 raise SpeisekammerAPIError(f"Unerwarteter Fehler: {err}") from err
 
 
-    async def async_fetch_initial_data(self):
+    async def async_fetch_initial_data(self, is_setup=False):
         """Ruft die Community ID und die Lagerorte ab (Validierung der Konfiguration)."""
         
         # 1. Community ID abrufen (GET /communities)
@@ -93,15 +93,18 @@ class SpeisekammerAPI:
         if not data:
              _LOGGER.warning("Keine Lagerorte für Community %s gefunden.", self.community_id)
              self.storage_locations = {}
-             return
-
-        # Lagerorte im Format {id: name} speichern
-        self.storage_locations = {item['id']: item['name'] for item in data}
-        _LOGGER.debug("Lagerorte geladen: %s", self.storage_locations)
+             # WICHTIG: Kein Return hier, da wir unten das Bus-Event trotzdem feuern müssen
+        else:
+             # Lagerorte im Format {id: name} speichern
+             self.storage_locations = {item['id']: item['name'] for item in data}
+             _LOGGER.debug("Lagerorte geladen: %s", self.storage_locations)
         
-        # Benachrichtigt alle Listener (z.B. den Sensor) über die erfolgreiche Aktualisierung
-        self.hass.bus.async_fire(f"call_service/{DOMAIN}/{SERVICE_REFRESH_DATA}")
-
+        
+        # Nur das Ereignis feuern, wenn es KEIN Initial-Setup ist.
+        # Im Setup-Schritt wird der Sensor geladen, und liest die Daten automatisch aus.
+        if not is_setup:
+            # Benachrichtigt alle Listener (z.B. den Sensor) über die erfolgreiche Aktualisierung
+            self.hass.bus.async_fire(f"call_service/{DOMAIN}/{SERVICE_REFRESH_DATA}")
 
     async def async_update_stock(self, storage_id, barcode, action, quantity, mhd_date=None):
         """Führt PUT /stock aus (Erfassung (1) oder Ausgabe (2))."""
