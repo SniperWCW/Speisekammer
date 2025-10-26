@@ -48,4 +48,4 @@ scan_item:
 
 refresh_data:
   name: Daten aktualisieren
-  description: Lädt Communities und Lagerorte neu. Nützlich nach API-Änderungen.
+  description: Lädt Communities und Lagerorte neu. Aktualisiert den Sensor.
